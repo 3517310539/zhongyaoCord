@@ -229,8 +229,11 @@ class ChineseMedicineSystem:
 
     def visualize_medicine_table(self, data=None):
         """以表格式图表显示中药数据（支持翻页）"""
-        if not MATPLOTLIB_AVAILABLE:
-            print("matplotlib库未安装，跳过可视化功能")
+        try:
+            import tkinter as tk
+            from tkinter import ttk
+        except ImportError:
+            print("tkinter库未可用，跳过可视化功能")
             return
             
         if not data:
@@ -244,93 +247,128 @@ class ChineseMedicineSystem:
         page_size = 20  # 每页显示20条
         total_pages = (total_records + page_size - 1) // page_size
 
-        current_page = 1
-        while True:
+        # 创建主窗口
+        root = tk.Tk()
+        root.title("中药数据表格")
+        root.geometry("1200x600")
+        root.resizable(True, True)
+
+        # 设置字体
+        style = ttk.Style()
+        style.configure("Treeview", font=("SimHei", 11))
+        style.configure("Treeview.Heading", font=("SimHei", 12, "bold"))
+
+        # 创建框架
+        frame = ttk.Frame(root, padding="10")
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        # 创建表格
+        columns = ('ID', '名称', '性味', '归经', '功效')
+        tree = ttk.Treeview(frame, columns=columns, show='headings')
+
+        # 设置列标题
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=150, anchor=tk.CENTER)
+
+        # 设置列宽
+        tree.column('ID', width=50)
+        tree.column('名称', width=120)
+        tree.column('性味', width=100)
+        tree.column('归经', width=150)
+        tree.column('功效', width=400)
+
+        # 添加滚动条
+        scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=tree.yview)
+        tree.configure(yscroll=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        tree.pack(fill=tk.BOTH, expand=True, side=tk.LEFT)
+
+        # 分页信息标签
+        page_info_var = tk.StringVar()
+        page_info_label = ttk.Label(frame, textvariable=page_info_var, font=("SimHei", 10))
+        page_info_label.pack(pady=10)
+
+        # 当前页码
+        current_page = [1]  # 使用列表存储，以便在函数中修改
+
+        def update_table():
+            """更新表格数据"""
+            # 清空表格
+            for item in tree.get_children():
+                tree.delete(item)
+
             # 计算当前页的数据范围
-            start_idx = (current_page - 1) * page_size
+            start_idx = (current_page[0] - 1) * page_size
             end_idx = min(start_idx + page_size, total_records)
             display_data = data[start_idx:end_idx]
 
-            # 准备表格数据
-            table_data = []
-            headers = ['ID', '名称', '性味', '归经']
-            
+            # 添加数据到表格
             for item in display_data:
-                table_data.append([
+                tree.insert('', tk.END, values=(
                     item['id'],
                     item['name'],
                     item['property'],
-                    item['channel'][:15] + '...' if len(item['channel']) > 15 else item['channel']
-                ])
+                    item['channel'],
+                    item['efficacy']
+                ))
 
-            # 创建图形和轴
-            fig, ax = plt.subplots(figsize=(12, min(8, len(display_data) * 0.5 + 4)))
-            ax.axis('off')  # 关闭坐标轴
+            # 更新分页信息
+            page_info_var.set(f"第 {current_page[0]}/{total_pages} 页，共 {total_records} 条记录")
 
-            # 创建表格
-            table = ax.table(
-                cellText=table_data,
-                colLabels=headers,
-                cellLoc='center',
-                loc='center'
-            )
+            # 更新按钮状态
+            btn_previous['state'] = 'normal' if current_page[0] > 1 else 'disabled'
+            btn_next['state'] = 'normal' if current_page[0] < total_pages else 'disabled'
+            btn_first['state'] = 'normal' if current_page[0] > 1 else 'disabled'
+            btn_last['state'] = 'normal' if current_page[0] < total_pages else 'disabled'
 
-            # 设置表格样式
-            table.auto_set_font_size(False)
-            table.set_fontsize(10)
-            table.scale(1, 1.5)  # 调整表格大小
+        def go_previous():
+            """上一页"""
+            if current_page[0] > 1:
+                current_page[0] -= 1
+                update_table()
 
-            # 设置表头样式
-            for (i, j), cell in table.get_celld().items():
-                if i == 0:
-                    cell.set_facecolor('#4CAF50')
-                    cell.set_text_props(color='white', weight='bold')
-                else:
-                    cell.set_facecolor('#f0f0f0' if i % 2 == 0 else '#ffffff')
+        def go_next():
+            """下一页"""
+            if current_page[0] < total_pages:
+                current_page[0] += 1
+                update_table()
 
-            # 添加分页信息
-            page_info = f"中药数据表格（共 {total_records} 条，第 {current_page}/{total_pages} 页）"
-            plt.title(page_info)
-            plt.tight_layout()
+        def go_first():
+            """首页"""
+            current_page[0] = 1
+            update_table()
 
-            # 显示图表
-            plt.show(block=True)
-            plt.close()
+        def go_last():
+            """末页"""
+            current_page[0] = total_pages
+            update_table()
 
-            # 分页控制
-            if total_pages > 1:
-                print(f"\n分页控制（共 {total_pages} 页）:")
-                print("1. 上一页")
-                print("2. 下一页")
-                print("3. 首页")
-                print("4. 末页")
-                print("5. 退出表格")
-                
-                while True:
-                    try:
-                        choice = input("请输入您的选择（1-5）: ")
-                        if choice == '1' and current_page > 1:
-                            current_page -= 1
-                            break
-                        elif choice == '2' and current_page < total_pages:
-                            current_page += 1
-                            break
-                        elif choice == '3':
-                            current_page = 1
-                            break
-                        elif choice == '4':
-                            current_page = total_pages
-                            break
-                        elif choice == '5':
-                            return
-                        else:
-                            print("输入错误或操作无效，请重新输入")
-                    except Exception as e:
-                        print(f"发生错误: {e}")
-                        continue
-            else:
-                # 只有一页时，直接退出
-                return
+        # 创建分页按钮
+        btn_frame = ttk.Frame(frame)
+        btn_frame.pack(pady=10)
+
+        btn_first = ttk.Button(btn_frame, text="首页", command=go_first)
+        btn_first.pack(side=tk.LEFT, padx=5)
+
+        btn_previous = ttk.Button(btn_frame, text="上一页", command=go_previous)
+        btn_previous.pack(side=tk.LEFT, padx=5)
+
+        btn_next = ttk.Button(btn_frame, text="下一页", command=go_next)
+        btn_next.pack(side=tk.LEFT, padx=5)
+
+        btn_last = ttk.Button(btn_frame, text="末页", command=go_last)
+        btn_last.pack(side=tk.LEFT, padx=5)
+
+        # 退出按钮
+        btn_exit = ttk.Button(btn_frame, text="退出", command=root.destroy)
+        btn_exit.pack(side=tk.LEFT, padx=5)
+
+        # 初始更新表格
+        update_table()
+
+        # 运行主循环
+        root.mainloop()
 
     def show_interactive_menu(self):
         """显示交互式菜单，让用户选择要查看的图表"""
