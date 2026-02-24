@@ -10,11 +10,11 @@ print("=== 本草纲目中药数据导入 ===")
 print("\n1. 清空现有数据...")
 try:
     cursor.execute("DELETE FROM medicines")
-    cursor.execute("DELETE FROM sqlite_sequence WHERE name='medicines'")  # 重置自增ID
+    cursor.execute("DELETE FROM sqlite_sequence WHERE name='medicines'")
     conn.commit()
-    print("✅ 成功清空现有数据")
+    print("成功清空现有数据")
 except sqlite3.Error as e:
-    print(f"❌ 清空数据失败: {e}")
+    print(f"清空数据失败: {e}")
     conn.close()
     exit(1)
 

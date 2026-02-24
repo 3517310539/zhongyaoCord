@@ -27,4 +27,4 @@ for row in all_data:
 
 # 关闭连接
 conn.close()
-print("\n数据库检查完成！")
+print("\n检查完成！")
