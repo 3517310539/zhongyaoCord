@@ -19,7 +19,7 @@ total_count = cursor.fetchone()[0]
 print(f"数据库中共有 {total_count} 条中药记录")
 
 # 查看所有数据
-print("\n所有中药数据:")
+print("\n 所有中药数据:")
 cursor.execute("SELECT id, name, property, channel, efficacy FROM medicines ORDER BY id")
 all_data = cursor.fetchall()
 for row in all_data:

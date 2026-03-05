@@ -23,7 +23,8 @@ except sqlite3.Error as e:
 
 # 批量添加
 print("\n=== 批量添加 ===")
-batch_sql = """
+batch_sql = """ 
+
 BEGIN TRANSACTION;
 INSERT OR IGNORE INTO medicines (name, property, channel, efficacy, usage, source)
 VALUES ('川芎', '辛，温', '肝、胆、心包经', '活血行气，祛风止痛', '煎服，3-10g', '伞形科植物川芎的干燥根茎');

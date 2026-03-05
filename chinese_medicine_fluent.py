@@ -118,7 +118,7 @@ class ChineseMedicineFluentApp(FluentWindow):
         self.addSubInterface(self.about_page, "关于", "关于", NavigationItemPosition.BOTTOM)
     
     def _init_pages(self):
-        """初始化页面"""
+        """初始化页面 """
         # 数据管理页面
         self.data_page = QWidget()
         self.data_page.setObjectName("data_page")

@@ -10,6 +10,7 @@ print("=== 中药数据修改工具 ===")
 print("\n=== 修改单个中药示例 ===")
 update_sql1 = """
 UPDATE medicines 
+
 SET property = '辛、甘，温', 
     channel = '肝、肾经', 
     efficacy = '补肾阳，强筋骨，祛风湿', 

@@ -135,6 +135,7 @@ print("开始添加中药数据...")
 try:
     # 使用executemany批量插入
     cursor.executemany('''
+    
         INSERT OR IGNORE INTO medicines (name, property, channel, efficacy, usage) 
         VALUES (?, ?, ?, ?, ?)
     ''', more_medicines)
