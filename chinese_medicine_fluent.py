@@ -2,12 +2,21 @@ import sys
 import sqlite3
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
-# 设置Matplotlib中文支持
-plt.rcParams['font.sans-serif'] = ['SimHei']  # 使用黑体
-plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
+# 尝试导入matplotlib，如果失败则跳过可视化
+MATPLOTLIB_AVAILABLE = False
+try:
+    import matplotlib.pyplot as plt
+    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+    # 设置Matplotlib中文支持
+    plt.rcParams['font.sans-serif'] = ['SimHei']  # 使用黑体
+    plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
+    MATPLOTLIB_AVAILABLE = True
+except Exception as e:
+    print(f"警告：matplotlib库导入失败，将跳过可视化功能: {e}")
+    # 定义一个占位符类
+    class FigureCanvas:
+        pass
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                            QHBoxLayout, QTableWidget, QTableWidgetItem, 
                            QPushButton, QLineEdit, QLabel, QComboBox, 
@@ -102,11 +111,11 @@ class ChineseMedicineFluentApp(FluentWindow):
     
     def _init_navigation(self):
         """初始化导航栏"""
-        self.addSubInterface(self.data_page, "1. 数据管理", "1. 数据管理")
-        self.addSubInterface(self.analysis_page, "2. 数据分析", "2. 数据分析")
-        self.addSubInterface(self.edit_page, "3. 数据编辑", "3. 数据编辑")
-        self.addSubInterface(self.import_export_page, "4. 导入导出", "4. 导入导出")
-        self.addSubInterface(self.about_page, "5. 关于", "5. 关于", NavigationItemPosition.BOTTOM)
+        self.addSubInterface(self.data_page, "数据管理", "数据管理")
+        self.addSubInterface(self.analysis_page, "数据分析", "数据分析")
+        self.addSubInterface(self.edit_page, "数据编辑", "数据编辑")
+        self.addSubInterface(self.import_export_page, "导入导出", "导入导出")
+        self.addSubInterface(self.about_page, "关于", "关于", NavigationItemPosition.BOTTOM)
     
     def _init_pages(self):
         """初始化页面"""
@@ -363,10 +372,20 @@ class ChineseMedicineFluentApp(FluentWindow):
             if widget:
                 widget.deleteLater()
         
-        # 创建图表
-        fig, ax = plt.subplots(figsize=(10, 6))
+        # 检查matplotlib是否可用
+        if not MATPLOTLIB_AVAILABLE:
+            # 创建一个标签提示
+            from PyQt5.QtWidgets import QLabel
+            error_label = QLabel("matplotlib库未可用，无法显示图表")
+            error_label.setAlignment(Qt.AlignCenter)
+            error_label.setStyleSheet("font-size: 14px; color: #666;")
+            self.chart_layout.addWidget(error_label)
+            return
         
         try:
+            # 创建图表
+            fig, ax = plt.subplots(figsize=(10, 6))
+            
             if analysis_type == "性味分布":
                 # 性味分布分析
                 self.cursor.execute("SELECT property, COUNT(*) FROM medicines GROUP BY property ORDER BY COUNT(*) DESC LIMIT 10")
